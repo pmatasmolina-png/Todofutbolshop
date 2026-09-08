@@ -84,6 +84,12 @@ app.post("/api/orders", upload.array("images", 20), (req, res) => {
       name: f.originalname
     }));
 
+    const quantity = images.length;
+    const discountRate = quantity >= 5 ? 0.20 : quantity === 4 ? 0.15 : quantity === 3 ? 0.10 : quantity === 2 ? 0.05 : 0;
+    const subtotal = quantity * price;
+    const discount = subtotal * discountRate;
+    const finalTotal = subtotal - discount;
+
     const order = {
       id: nextOrderId(data.orders),
       createdAt: new Date().toISOString(),
@@ -93,7 +99,11 @@ app.post("/api/orders", upload.array("images", 20), (req, res) => {
         address: String(req.body.address || "").trim()
       },
       price,
-      quantity: images.length,
+      quantity,
+      subtotal,
+      discountRate,
+      discount,
+      total: finalTotal,
       images,
       notes: String(req.body.notes || "").trim(),
       status: "Pendiente"

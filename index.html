@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fútbol Ropa</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#111111">
 </head>
 <body>
 <header><div class="logo">⚽ Fútbol Ropa</div><a href="admin.html" class="admin-link">Admin</a></header>
@@ -41,12 +44,17 @@
     </label>
     <div id="preview" class="preview"></div>
     <label>Notas <span>(opcional)</span><textarea name="notes" placeholder="Tallas, cantidades, etc."></textarea></label>
-    <div class="total">Precio: <strong id="total">—</strong> por camiseta</div>
+    <div class="total"><div id="quantityText"></div><div id="discountText"></div><div>Total: <strong id="total">—</strong></div><small>1 camiseta: 0% · 2: 5% · 3: 10% · 4: 15% · 5+: 20%</small></div>
     <button class="submit" type="submit">Enviar pedido</button>
   </form>
   <div id="message"></div>
 </section>
 </main>
 <script src="app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+}
+</script>
 </body>
 </html>
