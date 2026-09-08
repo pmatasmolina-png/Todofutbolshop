@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fútbol Ropa</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><div class="logo">⚽ Fútbol Ropa</div><a href="admin.html" class="admin-link">Admin</a></header>
+
+<main>
+<section class="hero">
+  <h1>Elige tu catálogo</h1>
+  <p>Entra al catálogo, busca tus camisetas y después vuelve aquí para subir las capturas.</p>
+  <div class="catalog-grid">
+    <a id="cat20" class="catalog-card price20" target="_blank">
+      <span>CATÁLOGO</span><strong>20 €</strong><small>Precio por camiseta</small>
+    </a>
+    <a id="cat25" class="catalog-card price25" target="_blank">
+      <span>CATÁLOGO</span><strong>25 €</strong><small>Precio por camiseta</small>
+    </a>
+  </div>
+</section>
+
+<section class="order-box">
+  <h2>Crear pedido</h2>
+  <p class="hint">Selecciona el catálogo que has usado. El precio queda fijado automáticamente.</p>
+  <div class="price-selector">
+    <button type="button" data-price="20">Camisetas de 20 €</button>
+    <button type="button" data-price="25">Camisetas de 25 €</button>
+  </div>
+
+  <form id="orderForm">
+    <input type="hidden" name="price" id="price">
+    <label>Nombre<input name="name" required></label>
+    <label>Teléfono<input name="phone" required></label>
+    <label>Dirección <span>(opcional)</span><input name="address"></label>
+    <label>Capturas de las camisetas
+      <input type="file" name="images" id="images" accept="image/jpeg,image/png,image/webp" multiple required>
+    </label>
+    <div id="preview" class="preview"></div>
+    <label>Notas <span>(opcional)</span><textarea name="notes" placeholder="Tallas, cantidades, etc."></textarea></label>
+    <div class="total">Precio: <strong id="total">—</strong> por camiseta</div>
+    <button class="submit" type="submit">Enviar pedido</button>
+  </form>
+  <div id="message"></div>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
