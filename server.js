@@ -30,7 +30,7 @@ app.post("/api/login",(req,res)=>{
 app.post("/api/logout",(req,res)=>{if(req.cookies.admin_token)adminTokens.delete(req.cookies.admin_token);res.clearCookie("admin_token");res.json({ok:true})});
 app.get("/api/me",(req,res)=>res.json({admin:!!(req.cookies.admin_token&&adminTokens.has(req.cookies.admin_token))}));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(__dirname));
 app.use("/uploads", express.static(UPLOADS));
 
 const storage = multer.diskStorage({
