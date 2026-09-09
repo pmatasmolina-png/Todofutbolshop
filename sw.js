@@ -1,4 +1,4 @@
-const CACHE_NAME = "todofutbolshop-v1";
+const CACHE_NAME = "todofutbolshop-v2";
 const APP_SHELL = [
   "/",
   "/index.html",

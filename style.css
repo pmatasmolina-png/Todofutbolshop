@@ -94,3 +94,18 @@
 .tf-section-title{display:flex;align-items:center;gap:10px;margin:25px 0 15px;font-weight:900}
 .tf-section-title:before,.tf-section-title:after{content:"";height:1px;background:#ccc;flex:1}
 @media(max-width:520px){.tf-discount-grid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* Catálogos premium */
+.tf-home-redesign .hero { padding-top: 8px; }
+.tf-home-redesign .hero h1 { margin-bottom: 8px; }
+.tf-home-redesign .hero p { max-width: 680px; margin-left: auto; margin-right: auto; line-height: 1.45; }
+.catalog-card { position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+.catalog-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px #0002; }
+.catalog-icon { font-size: 34px; margin-bottom: 8px; }
+.catalog-card strong { line-height: 1; margin: 2px 0 7px; }
+.catalog-card small { font-size: 14px; font-weight: 750; }
+.catalog-card small b { font-size: 20px; margin-left: 4px; }
+.catalog-cta { display: block; width: fit-content; margin: 18px auto 4px; padding: 12px 17px; border-radius: 999px; background: #111; color: #fff; text-decoration: none; font-weight: 800; }
+.tf-order-title { margin-top: 34px; }
+@media(max-width:650px){ .catalog-card { min-height: 150px; } .catalog-cta { width: 100%; text-align: center; } }
