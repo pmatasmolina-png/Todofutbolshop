@@ -1,9 +1,11 @@
-const CACHE_NAME = "todofutbolshop-v2";
+const CACHE_NAME = "todofutbolshop-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/style.css",
   "/app.js",
+  "/admin.html",
+  "/admin.js",
   "/manifest.json",
   "/icon-180.png",
   "/icon-512.png"
