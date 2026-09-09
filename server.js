@@ -96,7 +96,11 @@ app.post("/api/orders",upload.array("images",20),(req,res)=>{
     const catalogId=String(req.body.catalogId||"");
     const catalog=data.catalogs.find(c=>c.id===catalogId);
     if(!catalog) return res.status(400).json({error:"Catálogo no válido."});
-    const images=(req.files||[]).map(f=>({url:"/uploads/"+f.filename,name:f.originalname}));
+    const files=req.files||[];
+    let sizes=[];
+    try{sizes=JSON.parse(String(req.body.sizes||"[]"));}catch{sizes=[]}
+    if(!Array.isArray(sizes)||sizes.length!==files.length||sizes.some(s=>!String(s||"").trim())) return res.status(400).json({error:"Debes elegir una talla para cada camiseta."});
+    const images=files.map((f,i)=>({url:"/uploads/"+f.filename,name:f.originalname,size:String(sizes[i]).trim()}));
     const quantity=images.length;
     const quantityDiscountRate=quantity>=5?0.20:quantity===4?0.15:quantity===3?0.10:quantity===2?0.05:0;
     const subtotal=quantity*catalog.price;

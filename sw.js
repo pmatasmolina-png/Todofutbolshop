@@ -1,4 +1,4 @@
-const CACHE_NAME = "todofutbolshop-v3";
+const CACHE_NAME = "todofutbolshop-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -8,7 +8,8 @@ const APP_SHELL = [
   "/admin.js",
   "/manifest.json",
   "/icon-180.png",
-  "/icon-512.png"
+  "/icon-512.png",
+  "/tallas.jpg"
 ];
 
 self.addEventListener("install", event => {
