@@ -1,85 +1,12 @@
 <!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fútbol Ropa</title>
-<link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-180.png">
-<meta name="theme-color" content="#111111">
-</head>
-<body>
-<header><div class="logo">⚽ TODOFÚTBOL</div><a href="admin.html" class="admin-link">Admin</a></header>
-
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TodoFútbol</title><link rel="stylesheet" href="style.css"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><meta name="theme-color" content="#111111"></head>
+<body><header><div class="logo">⚽ TODOFÚTBOL</div><a href="admin.html" class="admin-link">Admin</a></header>
 <main class="tf-home-redesign">
-
-<section class="tf-info">
-  <div class="tf-info-card">
-    <div class="tf-logo">⚽ TODOFÚTBOL</div>
-    <h1>Compra tus camisetas fácilmente</h1>
-    <p>1. Elige un catálogo · 2. Haz capturas · 3. Súbelas al pedido · 4. Completa tus datos y envíalo.</p>
-  </div>
-</section>
-
-<section class="tf-discounts">
-  <h2>🔥 ¡Cuantas más camisetas, más ahorras!</h2>
-  <div class="tf-discount-grid">
-    <div><b>2</b><span>5% de descuento</span></div>
-    <div><b>3</b><span>10% de descuento</span></div>
-    <div><b>4</b><span>15% de descuento</span></div>
-    <div><b>5+</b><span>20% de descuento</span></div>
-  </div>
-</section>
-
+<section class="tf-info"><div class="tf-info-card"><div class="tf-logo">⚽ TODOFÚTBOL</div><h1>Compra tus camisetas fácilmente</h1><p>1. Elige un catálogo · 2. Haz capturas · 3. Súbelas al pedido · 4. Completa tus datos y envíalo.</p></div></section>
+<section class="tf-discounts"><h2>🔥 ¡Cuantas más camisetas, más ahorras!</h2><div class="tf-discount-grid"><div><b>2</b><span>5% de descuento</span></div><div><b>3</b><span>10% de descuento</span></div><div><b>4</b><span>15% de descuento</span></div><div><b>5+</b><span>20% de descuento</span></div></div></section>
 <div class="tf-section-title">👕 CATÁLOGOS</div>
-
-<section class="hero">
-  <h1>Elige tu catálogo</h1>
-  <p>Entra al catálogo, busca tus camisetas y después vuelve aquí para subir las capturas.</p>
-  <div class="catalog-grid">
-    <a id="cat20" class="catalog-card price20" target="_blank">
-      <div class="catalog-icon">👕</div>
-      <span>CATÁLOGO</span><strong>20 €</strong><small>Ver camisetas <b>→</b></small>
-    </a>
-    <a id="cat25" class="catalog-card price25" target="_blank">
-      <div class="catalog-icon">👕</div>
-      <span>CATÁLOGO</span><strong>25 €</strong><small>Ver camisetas <b>→</b></small>
-    </a>
-  </div>
-  <a class="catalog-cta" href="#order">Ya he elegido mis camisetas → Hacer pedido</a>
-</section>
-
+<section class="hero"><h1>Elige tu catálogo</h1><p>Entra al catálogo, busca tus camisetas y después vuelve aquí para subir las capturas.</p><div id="catalogGrid" class="catalog-grid"></div><a class="catalog-cta" href="#order">Ya he elegido mis camisetas → Hacer pedido</a></section>
 <div class="tf-section-title tf-order-title">📦 HACER PEDIDO</div>
-<section class="order-box" id="order">
-  <h2>Crear pedido</h2>
-  <p class="hint">Selecciona el catálogo que has usado. El precio queda fijado automáticamente.</p>
-  <div class="price-selector">
-    <button type="button" data-price="20">Camisetas de 20 €</button>
-    <button type="button" data-price="25">Camisetas de 25 €</button>
-  </div>
-
-  <form id="orderForm">
-    <input type="hidden" name="price" id="price">
-    <label>Nombre<input name="name" required></label>
-    <label>Teléfono<input name="phone" required></label>
-    <label>Dirección <span>(opcional)</span><input name="address"></label>
-    <label>Capturas de las camisetas
-      <input type="file" name="images" id="images" accept="image/jpeg,image/png,image/webp" multiple required>
-    </label>
-    <div id="preview" class="preview"></div>
-    <label>Notas <span>(opcional)</span><textarea name="notes" placeholder="Tallas, cantidades, etc."></textarea></label>
-    <div class="total"><div id="quantityText"></div><div id="discountText"></div><div>Total: <strong id="total">—</strong></div><small>1 camiseta: 0% · 2: 5% · 3: 10% · 4: 15% · 5+: 20%</small></div>
-    <button class="submit" type="submit">Enviar pedido</button>
-  </form>
-  <div id="message"></div>
-</section>
-</main>
-<script src="app.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
-}
-</script>
-</body>
-</html>
+<section class="order-box" id="order"><h2>Crear pedido</h2><p class="hint">Selecciona el catálogo que has usado. El precio queda fijado automáticamente.</p><div id="priceSelector" class="price-selector"></div>
+<form id="orderForm"><input type="hidden" name="catalogId" id="catalogId"><label>Nombre<input name="name" required></label><label>Teléfono<input name="phone" required></label><label>Dirección <span>(opcional)</span><input name="address"></label><label>Capturas de las camisetas<input type="file" name="images" id="images" accept="image/jpeg,image/png,image/webp" multiple required></label><div id="preview" class="preview"></div><label>Notas <span>(opcional)</span><textarea name="notes" placeholder="Tallas, cantidades, etc."></textarea></label><div class="total"><div id="quantityText"></div><div id="discountText"></div><div>Total: <strong id="total">—</strong></div><small>1 camiseta: 0% · 2: 5% · 3: 10% · 4: 15% · 5+: 20%</small></div><button class="submit" type="submit">Enviar pedido</button></form><div id="message"></div></section>
+</main><script src="app.js"></script><script>if("serviceWorker"in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js"))}</script></body></html>

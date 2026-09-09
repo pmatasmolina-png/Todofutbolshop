@@ -9,7 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA = path.join(__dirname, "data.json");
 const UPLOADS = path.join(__dirname, "uploads");
-
 if (!fs.existsSync(UPLOADS)) fs.mkdirSync(UPLOADS);
 
 app.use(express.json());
@@ -43,98 +42,64 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => {
-    cb(null, /^image\/(jpeg|png|webp)$/.test(file.mimetype));
+  fileFilter: (_, file, cb) => cb(null, /^image\/(jpeg|png|webp)$/.test(file.mimetype))
+});
+
+function readData(){
+  const data=JSON.parse(fs.readFileSync(DATA,"utf8"));
+  if(!Array.isArray(data.catalogs)){
+    const old=data.catalogs||{};
+    data.catalogs=Object.entries(old).map(([price,url],i)=>({id:`cat${price||i+1}`,name:`Catálogo ${price} €`,price:Number(price),url}));
   }
+  if(!Array.isArray(data.orders)) data.orders=[];
+  return data;
+}
+function writeData(data){fs.writeFileSync(DATA,JSON.stringify(data,null,2));}
+function nextOrderId(orders){const max=orders.reduce((m,o)=>Math.max(m,Number(o.id)||0),1000);return String(max+1)}
+function cleanCatalog(input,index){
+  const id=String(input.id||`cat-${Date.now()}-${index||0}`).trim().replace(/[^a-zA-Z0-9_-]/g,"-").slice(0,60);
+  const name=String(input.name||"").trim().slice(0,80);
+  const price=Number(input.price);
+  const url=String(input.url||"").trim();
+  if(!id||!name||!Number.isFinite(price)||price<=0||price>10000||!/^https?:\/\//i.test(url)) return null;
+  return {id,name,price,url};
+}
+
+app.get("/api/catalogs",(req,res)=>res.json(readData().catalogs));
+app.put("/api/catalogs",requireAdmin,(req,res)=>{
+  const incoming=Array.isArray(req.body.catalogs)?req.body.catalogs:[];
+  const seen=new Set();
+  const catalogs=incoming.map((c,i)=>cleanCatalog(c,i)).filter(c=>c&&!seen.has(c.id)&&!seen.add(c.id));
+  if(!catalogs.length) return res.status(400).json({error:"Debe existir al menos un catálogo válido."});
+  const data=readData(); data.catalogs=catalogs; writeData(data); res.json(catalogs);
 });
 
-function readData() {
-  return JSON.parse(fs.readFileSync(DATA, "utf8"));
-}
-function writeData(data) {
-  fs.writeFileSync(DATA, JSON.stringify(data, null, 2));
-}
-function nextOrderId(orders) {
-  const max = orders.reduce((m, o) => Math.max(m, Number(o.id) || 0), 1000);
-  return String(max + 1);
-}
-
-app.get("/api/catalogs", (req, res) => {
-  res.json(readData().catalogs);
-});
-
-app.put("/api/catalogs", requireAdmin, (req, res) => {
-  const data = readData();
-  const c20 = String(req.body["20"] || "").trim();
-  const c25 = String(req.body["25"] || "").trim();
-  if (!c20 || !c25) return res.status(400).json({ error: "Los dos enlaces son obligatorios." });
-  data.catalogs = { "20": c20, "25": c25 };
-  writeData(data);
-  res.json(data.catalogs);
-});
-
-app.post("/api/orders", upload.array("images", 20), (req, res) => {
-  try {
-    const data = readData();
-    const price = Number(req.body.price);
-    if (![20, 25].includes(price)) return res.status(400).json({ error: "Precio no válido." });
-
-    const images = (req.files || []).map(f => ({
-      url: "/uploads/" + f.filename,
-      name: f.originalname
-    }));
-
-    const quantity = images.length;
-    const discountRate = quantity >= 5 ? 0.20 : quantity === 4 ? 0.15 : quantity === 3 ? 0.10 : quantity === 2 ? 0.05 : 0;
-    const subtotal = quantity * price;
-    const discount = subtotal * discountRate;
-    const finalTotal = subtotal - discount;
-
-    const order = {
-      id: nextOrderId(data.orders),
-      createdAt: new Date().toISOString(),
-      customer: {
-        name: String(req.body.name || "").trim(),
-        phone: String(req.body.phone || "").trim(),
-        address: String(req.body.address || "").trim()
-      },
-      price,
-      quantity,
-      subtotal,
-      discountRate,
-      discount,
-      total: finalTotal,
-      images,
-      notes: String(req.body.notes || "").trim(),
-      status: "Pendiente"
+app.post("/api/orders",upload.array("images",20),(req,res)=>{
+  try{
+    const data=readData();
+    const catalogId=String(req.body.catalogId||"");
+    const catalog=data.catalogs.find(c=>c.id===catalogId);
+    if(!catalog) return res.status(400).json({error:"Catálogo no válido."});
+    const images=(req.files||[]).map(f=>({url:"/uploads/"+f.filename,name:f.originalname}));
+    const quantity=images.length;
+    const discountRate=quantity>=5?0.20:quantity===4?0.15:quantity===3?0.10:quantity===2?0.05:0;
+    const subtotal=quantity*catalog.price;
+    const discount=subtotal*discountRate;
+    const finalTotal=subtotal-discount;
+    const order={
+      id:nextOrderId(data.orders),createdAt:new Date().toISOString(),
+      customer:{name:String(req.body.name||"").trim(),phone:String(req.body.phone||"").trim(),address:String(req.body.address||"").trim()},
+      catalogId:catalog.id,catalogName:catalog.name,price:catalog.price,quantity,subtotal,discountRate,discount,total:finalTotal,images,
+      notes:String(req.body.notes||"").trim(),status:"Pendiente"
     };
-
-    if (!order.customer.name || !order.customer.phone || images.length === 0) {
-      return res.status(400).json({ error: "Nombre, teléfono y al menos una captura son obligatorios." });
-    }
-
-    data.orders.unshift(order);
-    writeData(data);
-    res.json(order);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "No se pudo crear el pedido." });
-  }
+    if(!order.customer.name||!order.customer.phone||images.length===0) return res.status(400).json({error:"Nombre, teléfono y al menos una captura son obligatorios."});
+    data.orders.unshift(order);writeData(data);res.json(order);
+  }catch(e){console.error(e);res.status(500).json({error:"No se pudo crear el pedido."})}
 });
-
-app.get("/api/orders", requireAdmin, (req, res) => {
-  res.json(readData().orders);
+app.get("/api/orders",requireAdmin,(req,res)=>res.json(readData().orders));
+app.patch("/api/orders/:id",requireAdmin,(req,res)=>{
+  const data=readData();const order=data.orders.find(o=>o.id===req.params.id);if(!order)return res.status(404).json({error:"Pedido no encontrado."});
+  const allowed=["Pendiente","Confirmado","En preparación","Enviado","Entregado","Cancelado"];
+  if(!allowed.includes(req.body.status))return res.status(400).json({error:"Estado no válido."});order.status=req.body.status;writeData(data);res.json(order);
 });
-
-app.patch("/api/orders/:id", requireAdmin, (req, res) => {
-  const data = readData();
-  const order = data.orders.find(o => o.id === req.params.id);
-  if (!order) return res.status(404).json({ error: "Pedido no encontrado." });
-  const allowed = ["Pendiente", "Confirmado", "En preparación", "Enviado", "Entregado", "Cancelado"];
-  if (!allowed.includes(req.body.status)) return res.status(400).json({ error: "Estado no válido." });
-  order.status = req.body.status;
-  writeData(data);
-  res.json(order);
-});
-
-app.listen(PORT, () => console.log(`Fútbol Ropa App: http://localhost:${PORT}`));
+app.listen(PORT,()=>console.log(`TodoFútbol App: http://localhost:${PORT}`));

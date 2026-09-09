@@ -1,7 +1,11 @@
 {
-  "catalogs": {
-    "20": "https://x.yupoo.com/photos/1022669895/albums",
-    "25": "https://huiliyuan.x.zhidian-inc.cn"
-  },
+  "catalogs": [
+    {
+      "id": "cat20",
+      "name": "Catálogo 20 €",
+      "price": 20,
+      "url": "https://x.yupoo.com/photos/1022669895/albums"
+    }
+  ],
   "orders": []
 }
