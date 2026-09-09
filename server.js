@@ -52,6 +52,7 @@ function readData(){
     data.catalogs=Object.entries(old).map(([price,url],i)=>({id:`cat${price||i+1}`,name:`Catálogo ${price} €`,price:Number(price),url}));
   }
   if(!Array.isArray(data.orders)) data.orders=[];
+  if(!Array.isArray(data.discountCodes)) data.discountCodes=[];
   return data;
 }
 function writeData(data){fs.writeFileSync(DATA,JSON.stringify(data,null,2));}
@@ -66,6 +67,21 @@ function cleanCatalog(input,index){
 }
 
 app.get("/api/catalogs",(req,res)=>res.json(readData().catalogs));
+app.get("/api/discount-codes",requireAdmin,(req,res)=>res.json(readData().discountCodes));
+app.put("/api/discount-codes",requireAdmin,(req,res)=>{
+  const incoming=Array.isArray(req.body.codes)?req.body.codes:[];
+  const seen=new Set();
+  const codes=[];
+  for(const raw of incoming){
+    const code=String(raw.code||"").trim().toUpperCase().replace(/\s+/g,"").slice(0,40);
+    const percent=Number(raw.percent);
+    const active=raw.active!==false;
+    if(!code || !/^[A-Z0-9_-]+$/.test(code) || !Number.isFinite(percent) || percent<=0 || percent>100 || seen.has(code)) continue;
+    seen.add(code); codes.push({id:String(raw.id||("dc-"+Date.now()+"-"+codes.length)),code,percent,active});
+  }
+  const data=readData(); data.discountCodes=codes; writeData(data); res.json(codes);
+});
+
 app.put("/api/catalogs",requireAdmin,(req,res)=>{
   const incoming=Array.isArray(req.body.catalogs)?req.body.catalogs:[];
   const seen=new Set();
@@ -82,14 +98,21 @@ app.post("/api/orders",upload.array("images",20),(req,res)=>{
     if(!catalog) return res.status(400).json({error:"Catálogo no válido."});
     const images=(req.files||[]).map(f=>({url:"/uploads/"+f.filename,name:f.originalname}));
     const quantity=images.length;
-    const discountRate=quantity>=5?0.20:quantity===4?0.15:quantity===3?0.10:quantity===2?0.05:0;
+    const quantityDiscountRate=quantity>=5?0.20:quantity===4?0.15:quantity===3?0.10:quantity===2?0.05:0;
     const subtotal=quantity*catalog.price;
-    const discount=subtotal*discountRate;
-    const finalTotal=subtotal-discount;
+    const quantityDiscount=subtotal*quantityDiscountRate;
+    const afterQuantityDiscount=subtotal-quantityDiscount;
+    const requestedCode=String(req.body.discountCode||"").trim().toUpperCase();
+    const discountCode=data.discountCodes.find(c=>c.code===requestedCode && c.active);
+    const codeDiscountRate=discountCode?Number(discountCode.percent)/100:0;
+    const codeDiscount=afterQuantityDiscount*codeDiscountRate;
+    const finalTotal=afterQuantityDiscount-codeDiscount;
+    const totalDiscount=quantityDiscount+codeDiscount;
+    if(requestedCode && !discountCode) return res.status(400).json({error:"Código de descuento no válido o no está activo."});
     const order={
       id:nextOrderId(data.orders),createdAt:new Date().toISOString(),
       customer:{name:String(req.body.name||"").trim(),phone:String(req.body.phone||"").trim(),address:String(req.body.address||"").trim()},
-      catalogId:catalog.id,catalogName:catalog.name,price:catalog.price,quantity,subtotal,discountRate,discount,total:finalTotal,images,
+      catalogId:catalog.id,catalogName:catalog.name,price:catalog.price,quantity,subtotal,discountRate:quantityDiscountRate,discount:totalDiscount,quantityDiscountRate,quantityDiscount,discountCode:discountCode?discountCode.code:"",codeDiscountRate,codeDiscount,total:finalTotal,images,
       notes:String(req.body.notes||"").trim(),status:"Pendiente"
     };
     if(!order.customer.name||!order.customer.phone||images.length===0) return res.status(400).json({error:"Nombre, teléfono y al menos una captura son obligatorios."});
