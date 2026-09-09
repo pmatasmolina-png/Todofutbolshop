@@ -97,22 +97,22 @@ app.post("/api/orders",upload.array("images",20),(req,res)=>{
     const catalog=data.catalogs.find(c=>c.id===catalogId);
     if(!catalog) return res.status(400).json({error:"Catálogo no válido."});
     const files=req.files||[];
-    let sizes=[];
-    try{sizes=JSON.parse(String(req.body.sizes||"[]"));}catch{sizes=[]}
-    if(!Array.isArray(sizes)||sizes.length!==files.length||sizes.some(s=>!String(s||"").trim())) return res.status(400).json({error:"Debes elegir una talla para cada camiseta."});
-    const images=files.map((f,i)=>({url:"/uploads/"+f.filename,name:f.originalname,size:String(sizes[i]).trim()}));
-    const quantity=images.length;
+    let items=[];
+    try{items=JSON.parse(String(req.body.items||"[]"));}catch{items=[]}
+    if(!Array.isArray(items)||items.length!==files.length||items.some(x=>!String(x.size||"").trim()||!Number.isInteger(Number(x.quantity))||Number(x.quantity)<1||Number(x.quantity)>99)) return res.status(400).json({error:"Debes elegir una talla y una cantidad válida para cada camiseta."});
+    const images=files.map((f,i)=>({url:"/uploads/"+f.filename,name:f.originalname,size:String(items[i].size).trim(),quantity:Number(items[i].quantity)}));
+    const quantity=images.reduce((n,x)=>n+x.quantity,0);
     const quantityDiscountRate=quantity>=5?0.20:quantity===4?0.15:quantity===3?0.10:quantity===2?0.05:0;
     const subtotal=quantity*catalog.price;
     const quantityDiscount=subtotal*quantityDiscountRate;
     const afterQuantityDiscount=subtotal-quantityDiscount;
     const requestedCode=String(req.body.discountCode||"").trim().toUpperCase();
     const discountCode=data.discountCodes.find(c=>c.code===requestedCode && c.active);
+    if(requestedCode && !discountCode) return res.status(400).json({error:"Código de descuento no válido o no está activo."});
     const codeDiscountRate=discountCode?Number(discountCode.percent)/100:0;
     const codeDiscount=afterQuantityDiscount*codeDiscountRate;
     const finalTotal=afterQuantityDiscount-codeDiscount;
     const totalDiscount=quantityDiscount+codeDiscount;
-    if(requestedCode && !discountCode) return res.status(400).json({error:"Código de descuento no válido o no está activo."});
     const order={
       id:nextOrderId(data.orders),createdAt:new Date().toISOString(),
       customer:{name:String(req.body.name||"").trim(),phone:String(req.body.phone||"").trim(),address:String(req.body.address||"").trim()},
