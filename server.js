@@ -53,6 +53,7 @@ function readData(){
   }
   if(!Array.isArray(data.orders)) data.orders=[];
   if(!Array.isArray(data.discountCodes)) data.discountCodes=[];
+  if(!Array.isArray(data.gallery)) data.gallery=[];
   return data;
 }
 function writeData(data){fs.writeFileSync(DATA,JSON.stringify(data,null,2));}
@@ -88,6 +89,44 @@ app.put("/api/catalogs",requireAdmin,(req,res)=>{
   const catalogs=incoming.map((c,i)=>cleanCatalog(c,i)).filter(c=>c&&!seen.has(c.id)&&!seen.add(c.id));
   if(!catalogs.length) return res.status(400).json({error:"Debe existir al menos un catálogo válido."});
   const data=readData(); data.catalogs=catalogs; writeData(data); res.json(catalogs);
+});
+
+// Galería de clientes: las fotos se publican solo después de aprobación del administrador.
+app.get("/api/gallery",(req,res)=>{
+  const data=readData();
+  res.json(data.gallery.filter(x=>x.status==="approved").map(x=>({id:x.id,name:x.name,comment:x.comment,image:x.image,createdAt:x.createdAt})));
+});
+app.get("/api/gallery/admin",requireAdmin,(req,res)=>res.json(readData().gallery));
+app.post("/api/gallery",upload.single("photo"),(req,res)=>{
+  try{
+    if(!req.file) return res.status(400).json({error:"Debes subir una foto válida."});
+    const name=String(req.body.name||"").trim().slice(0,40);
+    const comment=String(req.body.comment||"").trim().slice(0,180);
+    if(!name) return res.status(400).json({error:"Escribe tu nombre o apodo."});
+    const data=readData();
+    const id="gal-"+Date.now()+"-"+crypto.randomBytes(3).toString("hex");
+    const code="FOTO-"+crypto.randomBytes(3).toString("hex").toUpperCase();
+    const item={id,createdAt:new Date().toISOString(),name,comment,image:"/uploads/"+req.file.filename,status:"pending",discountCode:code,discountPercent:10};
+    data.gallery.unshift(item);data.discountCodes.push({id:"dc-"+Date.now()+"-"+crypto.randomBytes(2).toString("hex"),code,percent:10,active:false});
+    writeData(data);res.json({ok:true,id,discountCode:code,message:"Foto recibida. Cuando la aprobemos, tu código del 10% quedará activo."});
+  }catch(e){console.error(e);res.status(500).json({error:"No se pudo subir la foto."})}
+});
+app.patch("/api/gallery/:id",requireAdmin,(req,res)=>{
+  const data=readData();const item=data.gallery.find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:"Foto no encontrada."});
+  const action=String(req.body.action||"");
+  if(action==="approve"){
+    item.status="approved";
+    const dc=data.discountCodes.find(c=>c.code===item.discountCode);if(dc)dc.active=true;
+  }else if(action==="reject"){
+    item.status="rejected";
+    const dc=data.discountCodes.find(c=>c.code===item.discountCode);if(dc)dc.active=false;
+  }else if(action==="delete"){
+    try{if(item.image)fs.unlinkSync(path.join(__dirname,item.image.replace(/^\//,"")))}catch(e){}
+    data.gallery=data.gallery.filter(x=>x.id!==item.id);
+    data.discountCodes=data.discountCodes.filter(c=>c.code!==item.discountCode);
+    writeData(data);return res.json({ok:true});
+  }else return res.status(400).json({error:"Acción no válida."});
+  writeData(data);res.json(item);
 });
 
 app.post("/api/orders",upload.array("images",20),(req,res)=>{
