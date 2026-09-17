@@ -15,3 +15,6 @@ Tienda: http://localhost:3000
 Admin: http://localhost:3000/admin.html
 
 Para producción conviene usar una base de datos y almacenamiento de imágenes en la nube, además de HTTPS.
+
+
+Versión v6: incluye panel visible para cambiar contraseña y precios; carga gallery.js en administración y renueva caché PWA.
