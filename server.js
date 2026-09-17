@@ -13,7 +13,13 @@ if (!fs.existsSync(UPLOADS)) fs.mkdirSync(UPLOADS);
 
 app.use(express.json());
 app.use(cookieParser());
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "cambia-esta-clave";
+function getAdminPassword(){
+  const data=readDataSafe();
+  return String(data.adminPassword || process.env.ADMIN_PASSWORD || "cambia-esta-clave");
+}
+function readDataSafe(){
+  try{return JSON.parse(fs.readFileSync(DATA,"utf8"));}catch{return {};}
+}
 const adminTokens = new Set();
 function requireAdmin(req,res,next){
   const token=req.cookies.admin_token;
@@ -21,7 +27,7 @@ function requireAdmin(req,res,next){
   next();
 }
 app.post("/api/login",(req,res)=>{
-  if(String(req.body.password||"")!==ADMIN_PASSWORD) return res.status(401).json({error:"Contraseña incorrecta"});
+  if(String(req.body.password||"")!==getAdminPassword()) return res.status(401).json({error:"Contraseña incorrecta"});
   const token=crypto.randomBytes(32).toString("hex"); adminTokens.add(token);
   res.cookie("admin_token",token,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:8*60*60*1000});
   res.json({ok:true});
@@ -68,6 +74,14 @@ function cleanCatalog(input,index){
 }
 
 app.get("/api/catalogs",(req,res)=>res.json(readData().catalogs));
+app.put("/api/admin-password",requireAdmin,(req,res)=>{
+  const current=String(req.body.currentPassword||"");
+  const next=String(req.body.newPassword||"").trim();
+  if(current!==getAdminPassword()) return res.status(401).json({error:"Contraseña actual incorrecta."});
+  if(next.length<6 || next.length>100) return res.status(400).json({error:"La nueva contraseña debe tener entre 6 y 100 caracteres."});
+  const data=readData(); data.adminPassword=next; writeData(data);
+  res.json({ok:true,message:"Contraseña cambiada correctamente. Usa la nueva contraseña la próxima vez que entres."});
+});
 app.get("/api/discount-codes",requireAdmin,(req,res)=>res.json(readData().discountCodes));
 app.put("/api/discount-codes",requireAdmin,(req,res)=>{
   const incoming=Array.isArray(req.body.codes)?req.body.codes:[];
